@@ -23,16 +23,15 @@ Thanks to ackmax, AKuHAK, bignaux, israpps, KrahJohlito, uyjulian and all other 
 
 ### About This Fork
 
-Forked from SvenGDK's as it was included with PFS Batchkit (https://github.com/GDX-X/PFS-BatchKit-Manager) and was more stable with my PS2 build than latest stable or dev builds by PS2Homebrew (https://github.com/ps2homebrew/Open-PS2-Loader) on the date of 3/17/2026
+Forked from [SvenGDK's OPL](https://github.com/SvenGDK/Open-PS2-Loader) as it was included with [PFS BatchKit Manager](https://github.com/GDX-X/PFS-BatchKit-Manager) and was more stable with my PS2 build than the latest stable or dev builds by [PS2Homebrew](https://github.com/ps2homebrew/Open-PS2-Loader) as of 3/17/2026.
 
-Tested and deployed on:
-PS2 SCPH 5001(dex)
-Running FreeMCBoot/FMCB 1.9
-OEM PS2 HDD Network adapter w/ Bitfunx FAT v2.0 Adapter Mod
-2TB Crucial BX500 SATA 2.5 inch with 3D printed adapter, traditional PFS PS2 partionioning for stability.
+**Tested and deployed on:**
+- PS2 SCPH-50001 (DEX)
+- FreeMCBoot / FMCB 1.9
+- OEM PS2 HDD Network Adapter w/ Bitfunx FAT v2.0 Adapter Mod
+- 2TB Crucial BX500 SATA 2.5" with 3D printed adapter, traditional PFS PS2 partitioning for stability
 
-Intention was to create a direct OPL boot PS2/PS1 library that could be parent locked down so it all "just works".
-UX was prime concern. Features needed to include adding app_case PNG support for PS1 POPSTARTER APPS/ELF section (stable 1.1 has it but this is a pre 1.1 fork), automatic default VMC use, so no manual setup of memory cards per game, disabling of certain menu items when parental lock is on, adding art control fixes such as hiding or displaying discs or covers and background art on info page, coloring of some other text items, multiplayer info in cfgs to display on info page (replacing Size: key), renaming of pages to declare a PS1/PS2 section of games, automatic powering down after set time limit, minor bug fixes, and more.
+**Goal:** Create a direct-boot OPL PS2/PS1 game library that can be parental-locked so it all "just works." UX was the primary concern — features needed to include APPS case art support for PS1 POPSTARTER (stable 1.1 has it but this is a pre-1.1 fork), automatic default VMC assignment, parental lock restrictions on menu items and game options, art display controls for the info page, text color customization, multiplayer metadata display, page renaming for PS1/PS2 sections, inactivity power-off timer, and various bug fixes.
 
 ---
 
@@ -70,9 +69,11 @@ This fork adds the following features on top of SvenGDK's build:
 - Only applies when a per-game VMC is not already configured
 
 #### Parental Lock Improvements
-- Sensitive menu items are hidden entirely when locked (not just password-gated)
-- Locked menu shows only: Parental Lock, About, Exit, Power Off
+- Sensitive menu items hidden entirely when locked (not just password-gated)
+- Locked menu shows only: Parental Lock and Power Off
 - Full menu appears immediately after successful unlock
+- "Restrict Options Button" setting: hides Triangle/Options hint and silently blocks the button when locked — no more confusing password prompts for kids
+- Inactivity Power Off timer (Off / 15 min / 30 min / 1 hour / 2 hours) — automatically powers down the PS2 if left idle in OPL
 - Fixed: Start NBD Server was always visible regardless of HDD mode
 
 #### Info Page Improvements
@@ -82,7 +83,7 @@ This fork adds the following features on top of SvenGDK's build:
 - Works across all modes: HDD, BDM, ETH, and APPS
 
 #### Development Notes
-Portions of this fork were developed with AI assistance (Claude, Anthropic). All code was reviewed, tested, and validated on PS2 hardware.
+Portions of this fork were developed with AI assistance (Claude, Anthropic). All code was reviewed, tested, and validated on PS2 hardware by the maintainer.
 
 </p>
 </details>
