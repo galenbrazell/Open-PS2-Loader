@@ -31,7 +31,7 @@ Forked from [SvenGDK's OPL](https://github.com/SvenGDK/Open-PS2-Loader) as it wa
 - OEM PS2 HDD Network Adapter w/ Bitfunx FAT v2.0 Adapter Mod
 - 2TB Crucial BX500 SATA 2.5" with 3D printed adapter, traditional PFS PS2 partitioning for stability
 
-**Goal:** Create a direct-boot OPL PS2/PS1 game library that can be parental-locked so it all "just works." UX was the primary concern — features needed to include APPS case art support for PS1 POPSTARTER (stable 1.1 has it but this is a pre-1.1 fork), automatic default VMC assignment, parental lock restrictions on menu items and game options, art display controls for the info page, text color customization, multiplayer metadata display, page renaming for PS1/PS2 sections, inactivity power-off timer, and various bug fixes.
+**Goal:** Create a direct-boot OPL PS2/PS1 game library that can be parental-locked so it all "just works." CRT 4:3 Focused. UX was the primary concern — features needed to include APPS case art support for PS1 POPSTARTER (stable 1.1 has it but this is a pre-1.1 fork), automatic default VMC assignment, parental lock restrictions on menu items and game options, art display controls for the info page, text color customization, multiplayer metadata display, page renaming for PS1/PS2 sections, inactivity power-off timer, and various bug fixes.
 
 ---
 
@@ -84,6 +84,30 @@ This fork adds the following features on top of SvenGDK's build:
 
 #### Development Notes
 Portions of this fork were developed with AI assistance (Claude, Anthropic). All code was reviewed, tested, and validated on PS2 hardware by the maintainer.
+
+</p>
+</details>
+
+<details>
+  <summary> <b> Pics </b> </summary>
+<p>
+
+#### PS2 Game List
+![Untitled-1](https://github.com/user-attachments/assets/ccb610c7-333a-4b7d-bb24-cbe51eefb0f2)
+#### PS2 Game Info
+![Untitled-2-5](https://github.com/user-attachments/assets/e5155d2d-d49a-49b2-a0d1-7165b45676bd)
+#### PS1 Game List
+![Untitled-3](https://github.com/user-attachments/assets/5e46033a-4ad4-4e66-8117-41feb1cc3864)
+#### PS1 Game Info
+![Untitled-4](https://github.com/user-attachments/assets/61a721a6-2079-49f5-8b08-fdfb95ef985b)
+#### New Parental Lock Settings
+![Untitled-5](https://github.com/user-attachments/assets/3eab8e60-cab5-4e83-8e8e-c98684c416ae)
+#### Menu Screen With Parental Lock On
+![Untitled-6](https://github.com/user-attachments/assets/fa857d31-9461-4945-ac49-133e1007bd95)
+#### New Theme Customization Screen (Under Display Settings)
+![Untitled-7](https://github.com/user-attachments/assets/b7c03d4b-1c98-4368-bb9d-178fb405ae7c)
+#### New Extra Settings Screen (Under Settings)
+![Untitled-8](https://github.com/user-attachments/assets/dc053db1-48e1-41c0-9138-17ecb606066a)
 
 </p>
 </details>
