@@ -24,6 +24,24 @@ enum UI_ITEMS {
     UICFG_YOFF,
     UICFG_OVERSCAN,
     UICFG_NOTIFICATIONS,
+    UICFG_THMCFG_BTN,
+
+    // Theme customization dialog IDs
+    THMCFG_SHOW_GAME_ID,
+    THMCFG_SHOW_PAGE_TITLE,
+    THMCFG_SHOW_HINTS,
+    THMCFG_COVER_BDM,
+    THMCFG_COVER_HDD,
+    THMCFG_COVER_ETH,
+    THMCFG_COVER_APP,
+    THMCFG_ICON_BDM,
+    THMCFG_ICON_HDD,
+    THMCFG_ICON_ETH,
+    THMCFG_ICON_APP,
+    THMCFG_MENU_ICONS,
+    THMCFG_SHOW_INFO_BG,
+    THMCFG_PAGETITLE_COLOR,
+    THMCFG_HINT_TEXT_COLOR,
 
     CFG_DEBUG,
     CFG_PS2LOGO,
@@ -43,6 +61,14 @@ enum UI_ITEMS {
     CFG_BDMPREFIX,
     CFG_ETHPREFIX,
     CFG_HDDSPINDOWN,
+    CFG_WLAUNCHELF_PATH,
+    CFG_DEFAULT_VMC_0,
+    CFG_DEFAULT_VMC_1,
+    CFG_PAGE_NAME_BDM,
+    CFG_PAGE_NAME_HDD,
+    CFG_PAGE_NAME_ETH,
+    CFG_PAGE_NAME_APP,
+    CFG_EXTRAS_BTN,
 
     ABOUT_TITLE,
     ABOUT_BUILD_DETAILS,
@@ -212,4 +238,6 @@ extern struct UIItem diaNetCompatUpdate[];
 extern struct UIItem diaParentalLockConfig[];
 
 extern struct UIItem diaOSDConfig[];
+extern struct UIItem diaThemeConfig[];
+extern struct UIItem diaExtrasConfig[];
 #endif

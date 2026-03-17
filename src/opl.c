@@ -177,6 +177,18 @@ int gScrollSpeed;
 char gExitPath[32];
 int gDisableDebug;
 int gPS2Logo;
+
+// Theme customization
+int gShowGameID;
+int gShowPageTitle;
+int gShowHints;
+int gShowCovers[4];  // BDM, ETH, HDD, APP
+int gShowDiscIcon[4];
+int gShowMenuIcons;
+int gShowInfoBG;
+char gWLaunchELFPath[256];
+char gDefaultVMC[2][32];
+char gPageName[4][32]; // BDM, ETH, HDD, APP
 int gDefaultDevice;
 int gEnableWrite;
 char gBDMPrefix[32];
@@ -190,6 +202,8 @@ unsigned char gDefaultBgColor[3];
 unsigned char gDefaultTextColor[3];
 unsigned char gDefaultSelTextColor[3];
 unsigned char gDefaultUITextColor[3];
+unsigned char gDefaultPageTitleColor[3];
+unsigned char gDefaultHintTextColor[3];
 hdl_game_info_t *gAutoLaunchGame;
 char gOPLPart[128];
 char *gHDDPrefix;
@@ -247,6 +261,23 @@ static void itemExecSelect(struct menu_item *curMenu)
         if (support->enabled) {
             if (curMenu->current) {
                 config_set_t *configSet = menuLoadConfig();
+
+                // Inject global default VMCs if not set per-game, and save on first use
+                char vmcCheck[32];
+                int vmcWritten = 0;
+                configGetVMC(configSet, vmcCheck, sizeof(vmcCheck), 0);
+                if (vmcCheck[0] == '\0' && gDefaultVMC[0][0] != '\0') {
+                    configSetVMC(configSet, gDefaultVMC[0], 0);
+                    vmcWritten = 1;
+                }
+                configGetVMC(configSet, vmcCheck, sizeof(vmcCheck), 1);
+                if (vmcCheck[0] == '\0' && gDefaultVMC[1][0] != '\0') {
+                    configSetVMC(configSet, gDefaultVMC[1], 1);
+                    vmcWritten = 1;
+                }
+                if (vmcWritten)
+                    configWrite(configSet);
+
                 support->itemLaunch(curMenu->current->item.id, configSet);
             }
         } else {
@@ -316,8 +347,15 @@ static void initMenuForListSupport(int mode)
 {
     opl_io_module_t *mod = &list_support[mode];
     mod->menuItem.icon_id = mod->support->iconId;
-    mod->menuItem.text = NULL;
-    mod->menuItem.text_id = mod->support->textId;
+
+    // Custom page name overrides the default lang string
+    if (mode < 4 && gPageName[mode][0] != '\0') {
+        mod->menuItem.text = gPageName[mode];
+        mod->menuItem.text_id = -1;
+    } else {
+        mod->menuItem.text = NULL;
+        mod->menuItem.text_id = mod->support->textId;
+    }
 
     mod->menuItem.userdata = mod->support;
 
@@ -621,7 +659,8 @@ static void updateMenuFromGameList(opl_io_module_t *mdl)
             gup->submenu.text_id = -1;
             gup->submenu.selected = 0;
 
-            if (gRememberLastPlayed && temp && strcmp(temp, mdl->support->itemGetStartup(i)) == 0) {
+            if (gRememberLastPlayed && temp && (strcmp(temp, mdl->support->itemGetStartup(i)) == 0
+                || strcmp(temp, mdl->support->itemGetName(i)) == 0)) {
                 gup->submenu.selected = 1; //Select Last Played Game
             }
 
@@ -825,6 +864,8 @@ static void _loadConfig()
             configGetColor(configOPL, CONFIG_OPL_TEXTCOLOR, gDefaultTextColor);
             configGetColor(configOPL, CONFIG_OPL_UI_TEXTCOLOR, gDefaultUITextColor);
             configGetColor(configOPL, CONFIG_OPL_SEL_TEXTCOLOR, gDefaultSelTextColor);
+            configGetColor(configOPL, CONFIG_OPL_PAGETITLE_COLOR, gDefaultPageTitleColor);
+            configGetColor(configOPL, CONFIG_OPL_HINT_TEXT_COLOR, gDefaultHintTextColor);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_NOTIFICATIONS, &gEnableNotifications);
             configGetInt(configOPL, CONFIG_OPL_ENABLE_COVERART, &gEnableArt);
             configGetInt(configOPL, CONFIG_OPL_WIDESCREEN, &gWideScreen);
@@ -864,6 +905,30 @@ static void _loadConfig()
             configGetInt(configOPL, CONFIG_OPL_BOOT_SND, &gEnableBootSND);
             configGetInt(configOPL, CONFIG_OPL_SFX_VOLUME, &gSFXVolume);
             configGetInt(configOPL, CONFIG_OPL_BOOT_SND_VOLUME, &gBootSndVolume);
+
+            // Theme customization
+            configGetInt(configOPL, CONFIG_OPL_SHOW_GAME_ID, &gShowGameID);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_PAGE_TITLE, &gShowPageTitle);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_HINTS, &gShowHints);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_COVER_BDM, &gShowCovers[0]);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_COVER_HDD, &gShowCovers[2]);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_COVER_ETH, &gShowCovers[1]);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_COVER_APP, &gShowCovers[3]);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_ICON_BDM, &gShowDiscIcon[0]);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_ICON_HDD, &gShowDiscIcon[2]);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_ICON_ETH, &gShowDiscIcon[1]);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_ICON_APP, &gShowDiscIcon[3]);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_MENU_ICONS, &gShowMenuIcons);
+            configGetInt(configOPL, CONFIG_OPL_SHOW_INFO_BG, &gShowInfoBG);
+            configGetStrCopy(configOPL, CONFIG_OPL_WLAUNCHELF_PATH, gWLaunchELFPath, sizeof(gWLaunchELFPath));
+            configGetStrCopy(configOPL, CONFIG_OPL_DEFAULT_VMC_0, gDefaultVMC[0], sizeof(gDefaultVMC[0]));
+            configGetStrCopy(configOPL, CONFIG_OPL_DEFAULT_VMC_1, gDefaultVMC[1], sizeof(gDefaultVMC[1]));
+
+            // Custom page names
+            configGetStrCopy(configOPL, CONFIG_OPL_PAGE_NAME_BDM, gPageName[0], sizeof(gPageName[0]));
+            configGetStrCopy(configOPL, CONFIG_OPL_PAGE_NAME_ETH, gPageName[1], sizeof(gPageName[1]));
+            configGetStrCopy(configOPL, CONFIG_OPL_PAGE_NAME_HDD, gPageName[2], sizeof(gPageName[2]));
+            configGetStrCopy(configOPL, CONFIG_OPL_PAGE_NAME_APP, gPageName[3], sizeof(gPageName[3]));
         }
     }
 
@@ -985,6 +1050,8 @@ static void _saveConfig()
         configSetColor(configOPL, CONFIG_OPL_TEXTCOLOR, gDefaultTextColor);
         configSetColor(configOPL, CONFIG_OPL_UI_TEXTCOLOR, gDefaultUITextColor);
         configSetColor(configOPL, CONFIG_OPL_SEL_TEXTCOLOR, gDefaultSelTextColor);
+        configSetColor(configOPL, CONFIG_OPL_PAGETITLE_COLOR, gDefaultPageTitleColor);
+        configSetColor(configOPL, CONFIG_OPL_HINT_TEXT_COLOR, gDefaultHintTextColor);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_NOTIFICATIONS, gEnableNotifications);
         configSetInt(configOPL, CONFIG_OPL_ENABLE_COVERART, gEnableArt);
         configSetInt(configOPL, CONFIG_OPL_WIDESCREEN, gWideScreen);
@@ -1014,6 +1081,30 @@ static void _saveConfig()
         configSetInt(configOPL, CONFIG_OPL_BOOT_SND, gEnableBootSND);
         configSetInt(configOPL, CONFIG_OPL_SFX_VOLUME, gSFXVolume);
         configSetInt(configOPL, CONFIG_OPL_BOOT_SND_VOLUME, gBootSndVolume);
+
+        // Theme customization
+        configSetInt(configOPL, CONFIG_OPL_SHOW_GAME_ID, gShowGameID);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_PAGE_TITLE, gShowPageTitle);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_HINTS, gShowHints);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_COVER_BDM, gShowCovers[0]);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_COVER_HDD, gShowCovers[2]);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_COVER_ETH, gShowCovers[1]);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_COVER_APP, gShowCovers[3]);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_ICON_BDM, gShowDiscIcon[0]);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_ICON_HDD, gShowDiscIcon[2]);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_ICON_ETH, gShowDiscIcon[1]);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_ICON_APP, gShowDiscIcon[3]);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_MENU_ICONS, gShowMenuIcons);
+        configSetInt(configOPL, CONFIG_OPL_SHOW_INFO_BG, gShowInfoBG);
+        configSetStr(configOPL, CONFIG_OPL_WLAUNCHELF_PATH, gWLaunchELFPath);
+        configSetStr(configOPL, CONFIG_OPL_DEFAULT_VMC_0, gDefaultVMC[0]);
+        configSetStr(configOPL, CONFIG_OPL_DEFAULT_VMC_1, gDefaultVMC[1]);
+
+        // Custom page names
+        configSetStr(configOPL, CONFIG_OPL_PAGE_NAME_BDM, gPageName[0]);
+        configSetStr(configOPL, CONFIG_OPL_PAGE_NAME_ETH, gPageName[1]);
+        configSetStr(configOPL, CONFIG_OPL_PAGE_NAME_HDD, gPageName[2]);
+        configSetStr(configOPL, CONFIG_OPL_PAGE_NAME_APP, gPageName[3]);
 
         configSetInt(configOPL, CONFIG_OPL_SWAP_SEL_BUTTON, gSelectButton == KEY_CIRCLE ? 0 : 1);
     }
@@ -1074,9 +1165,25 @@ void applyConfig(int themeID, int langID)
     changed = thmSetGuiValue(themeID, changed);
     int langChanged = lngSetGuiValue(langID);
 
+    thmRecalcItemsListSize();
+
     guiUpdateScreenScale();
 
     initAllSupport(0);
+
+    // Refresh custom page names for all active modes
+    int m;
+    for (m = 0; m < MODE_COUNT && m < 4; m++) {
+        if (list_support[m].support) {
+            if (gPageName[m][0] != '\0') {
+                list_support[m].menuItem.text = gPageName[m];
+                list_support[m].menuItem.text_id = -1;
+            } else {
+                list_support[m].menuItem.text = NULL;
+                list_support[m].menuItem.text_id = list_support[m].support->textId;
+            }
+        }
+    }
 
     moduleUpdateMenu(BDM_MODE, changed, langChanged);
     moduleUpdateMenu(ETH_MODE, changed, langChanged);
@@ -1615,6 +1722,15 @@ void setDefaultColors(void)
     gDefaultUITextColor[0] = 0x58;
     gDefaultUITextColor[1] = 0x68;
     gDefaultUITextColor[2] = 0xB4;
+
+    // Default to white, same as text color
+    gDefaultPageTitleColor[0] = 0xFF;
+    gDefaultPageTitleColor[1] = 0xFF;
+    gDefaultPageTitleColor[2] = 0xFF;
+
+    gDefaultHintTextColor[0] = 0xFF;
+    gDefaultHintTextColor[1] = 0xFF;
+    gDefaultHintTextColor[2] = 0xFF;
 }
 
 static void setDefaults(void)
@@ -1688,6 +1804,28 @@ static void setDefaults(void)
 
     gEnableFW = 0;
 
+    // Theme customization defaults (all visible)
+    gShowGameID = 1;
+    gShowPageTitle = 1;
+    gShowHints = 1;
+    gShowCovers[0] = 1; // BDM
+    gShowCovers[1] = 1; // ETH
+    gShowCovers[2] = 1; // HDD
+    gShowCovers[3] = 1; // APP
+    gShowDiscIcon[0] = 1;
+    gShowDiscIcon[1] = 1;
+    gShowDiscIcon[2] = 1;
+    gShowDiscIcon[3] = 1;
+    gShowMenuIcons = 1;
+    gShowInfoBG = 1;
+    gWLaunchELFPath[0] = '\0';
+    gDefaultVMC[0][0] = '\0';
+    gDefaultVMC[1][0] = '\0';
+    gPageName[0][0] = '\0'; // BDM
+    gPageName[1][0] = '\0'; // ETH
+    gPageName[2][0] = '\0'; // HDD
+    gPageName[3][0] = '\0'; // APP
+
     frameCounter = 0;
 
     gVMode = 0;
@@ -1744,9 +1882,18 @@ static void deferredInit(void)
     struct gui_update_t *id = guiOpCreate(GUI_INIT_DONE);
     guiDeferUpdate(id);
 
-    if (list_support[gDefaultDevice].support) {
+    // Determine which page to show on boot
+    int bootDevice = gDefaultDevice;
+    if (gRememberLastPlayed) {
+        int lastMode = -1;
+        configGetInt(configGetByType(CONFIG_LAST), "last_played_mode", &lastMode);
+        if (lastMode >= 0 && lastMode < MODE_COUNT && list_support[lastMode].support)
+            bootDevice = lastMode;
+    }
+
+    if (list_support[bootDevice].support) {
         id = guiOpCreate(GUI_OP_SELECT_MENU);
-        id->menu.menu = &list_support[gDefaultDevice].menuItem;
+        id->menu.menu = &list_support[bootDevice].menuItem;
         guiDeferUpdate(id);
     }
 }

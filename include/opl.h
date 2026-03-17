@@ -137,6 +137,24 @@ extern int gEnableBootSND;
 extern int gSFXVolume;
 extern int gBootSndVolume;
 
+// Theme customization
+extern int gShowGameID;
+extern int gShowPageTitle;
+extern int gShowHints;
+extern int gShowCovers[4];  // indexed by IO_MODES: BDM, ETH, HDD, APP
+extern int gShowDiscIcon[4];
+extern int gShowMenuIcons;
+extern int gShowInfoBG;
+
+// wLaunchELF path
+extern char gWLaunchELFPath[256];
+
+// Default VMC names
+extern char gDefaultVMC[2][32];
+
+// Custom page names (empty = use default from lang)
+extern char gPageName[4][32]; // indexed by mode: BDM, ETH, HDD, APP
+
 extern int gCheatSource;
 extern int gGSMSource;
 extern int gPadEmuSource;
@@ -192,6 +210,8 @@ extern unsigned char gDefaultBgColor[3];
 extern unsigned char gDefaultTextColor[3];
 extern unsigned char gDefaultSelTextColor[3];
 extern unsigned char gDefaultUITextColor[3];
+extern unsigned char gDefaultPageTitleColor[3];
+extern unsigned char gDefaultHintTextColor[3];
 
 extern hdl_game_info_t *gAutoLaunchGame;
 extern char *gHDDPrefix;

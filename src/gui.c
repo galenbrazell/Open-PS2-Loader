@@ -437,11 +437,60 @@ static int guiUpdater(int modified)
         diaGetInt(diaConfig, CFG_LASTPLAYED, &showAutoStartLast);
         diaSetVisible(diaConfig, CFG_LBL_AUTOSTARTLAST, showAutoStartLast);
         diaSetVisible(diaConfig, CFG_AUTOSTARTLAST, showAutoStartLast);
+
+        // Grey out Default Device when Remember Last Played is on
+        diaSetEnabled(diaConfig, CFG_DEFDEVICE, !showAutoStartLast);
 		
         diaGetInt(diaConfig, CFG_BDMMODE, &gBDMStartMode);
         diaSetEnabled(diaConfig, CFG_ENABLEFW, gBDMStartMode);
     }
     return 0;
+}
+
+void guiShowExtrasConfig(void)
+{
+    const char *vmcNames[] = {"None", "generic_0", "generic_1", NULL};
+    diaSetEnum(diaExtrasConfig, CFG_DEFAULT_VMC_0, vmcNames);
+    diaSetEnum(diaExtrasConfig, CFG_DEFAULT_VMC_1, vmcNames);
+
+    diaSetString(diaExtrasConfig, CFG_WLAUNCHELF_PATH, gWLaunchELFPath);
+
+    // Convert stored VMC name to enum index
+    int vmcIdx0 = 0, vmcIdx1 = 0;
+    if (!strcmp(gDefaultVMC[0], "generic_0")) vmcIdx0 = 1;
+    else if (!strcmp(gDefaultVMC[0], "generic_1")) vmcIdx0 = 2;
+    if (!strcmp(gDefaultVMC[1], "generic_0")) vmcIdx1 = 1;
+    else if (!strcmp(gDefaultVMC[1], "generic_1")) vmcIdx1 = 2;
+    diaSetInt(diaExtrasConfig, CFG_DEFAULT_VMC_0, vmcIdx0);
+    diaSetInt(diaExtrasConfig, CFG_DEFAULT_VMC_1, vmcIdx1);
+
+    // Custom page names
+    diaSetString(diaExtrasConfig, CFG_PAGE_NAME_BDM, gPageName[0]);
+    diaSetString(diaExtrasConfig, CFG_PAGE_NAME_HDD, gPageName[2]);
+    diaSetString(diaExtrasConfig, CFG_PAGE_NAME_ETH, gPageName[1]);
+    diaSetString(diaExtrasConfig, CFG_PAGE_NAME_APP, gPageName[3]);
+
+    int ret = diaExecuteDialog(diaExtrasConfig, -1, 1, NULL);
+    if (ret) {
+        diaGetString(diaExtrasConfig, CFG_WLAUNCHELF_PATH, gWLaunchELFPath, sizeof(gWLaunchELFPath));
+
+        int vmcSel;
+        diaGetInt(diaExtrasConfig, CFG_DEFAULT_VMC_0, &vmcSel);
+        if (vmcSel == 1) strncpy(gDefaultVMC[0], "generic_0", sizeof(gDefaultVMC[0]));
+        else if (vmcSel == 2) strncpy(gDefaultVMC[0], "generic_1", sizeof(gDefaultVMC[0]));
+        else gDefaultVMC[0][0] = '\0';
+
+        diaGetInt(diaExtrasConfig, CFG_DEFAULT_VMC_1, &vmcSel);
+        if (vmcSel == 1) strncpy(gDefaultVMC[1], "generic_0", sizeof(gDefaultVMC[1]));
+        else if (vmcSel == 2) strncpy(gDefaultVMC[1], "generic_1", sizeof(gDefaultVMC[1]));
+        else gDefaultVMC[1][0] = '\0';
+
+        // Custom page names
+        diaGetString(diaExtrasConfig, CFG_PAGE_NAME_BDM, gPageName[0], sizeof(gPageName[0]));
+        diaGetString(diaExtrasConfig, CFG_PAGE_NAME_HDD, gPageName[2], sizeof(gPageName[2]));
+        diaGetString(diaExtrasConfig, CFG_PAGE_NAME_ETH, gPageName[1], sizeof(gPageName[1]));
+        diaGetString(diaExtrasConfig, CFG_PAGE_NAME_APP, gPageName[3], sizeof(gPageName[3]));
+    }
 }
 
 void guiShowConfig()
@@ -450,6 +499,7 @@ void guiShowConfig()
     const char *deviceNames[] = {_l(_STR_BDM_GAMES), _l(_STR_NET_GAMES), _l(_STR_HDD_GAMES), NULL};
     const char *deviceModes[] = {_l(_STR_OFF), _l(_STR_MANUAL), _l(_STR_AUTO), NULL};
 
+reopen_settings:
     diaSetEnum(diaConfig, CFG_DEFDEVICE, deviceNames);
     diaSetEnum(diaConfig, CFG_BDMMODE, deviceModes);
     diaSetEnum(diaConfig, CFG_HDDMODE, deviceModes);
@@ -470,6 +520,7 @@ void guiShowConfig()
     diaSetVisible(diaConfig, CFG_LBL_AUTOSTARTLAST, gRememberLastPlayed);
 
     diaSetInt(diaConfig, CFG_DEFDEVICE, gDefaultDevice);
+    diaSetEnabled(diaConfig, CFG_DEFDEVICE, !gRememberLastPlayed);
     diaSetInt(diaConfig, CFG_BDMMODE, gBDMStartMode);
     diaSetInt(diaConfig, CFG_HDDMODE, gHDDStartMode);
     diaSetInt(diaConfig, CFG_ETHMODE, gETHStartMode);
@@ -478,6 +529,10 @@ void guiShowConfig()
     diaSetInt(diaConfig, CFG_ENABLEFW, gEnableFW);
 
     int ret = diaExecuteDialog(diaConfig, -1, 1, &guiUpdater);
+    if (ret == CFG_EXTRAS_BTN) {
+        guiShowExtrasConfig();
+        goto reopen_settings;
+    }
     if (ret) {
         diaGetInt(diaConfig, CFG_DEBUG, &gDisableDebug);
         diaGetInt(diaConfig, CFG_PS2LOGO, &gPS2Logo);
@@ -497,6 +552,7 @@ void guiShowConfig()
 
         diaGetInt(diaConfig, CFG_ENABLEFW, &gEnableFW);
 
+        guiRenderTextScreen(_l(_STR_PLEASE_WAIT));
         applyConfig(-1, -1);
         menuReinitMainMenu();
     }
@@ -572,6 +628,46 @@ static int guiUIUpdater(int modified)
     return 0;
 }
 
+void guiShowThemeConfig(void)
+{
+    diaSetInt(diaThemeConfig, THMCFG_SHOW_GAME_ID, gShowGameID);
+    diaSetInt(diaThemeConfig, THMCFG_SHOW_PAGE_TITLE, gShowPageTitle);
+    diaSetInt(diaThemeConfig, THMCFG_SHOW_HINTS, gShowHints);
+    diaSetInt(diaThemeConfig, THMCFG_MENU_ICONS, gShowMenuIcons);
+    diaSetInt(diaThemeConfig, THMCFG_SHOW_INFO_BG, gShowInfoBG);
+    diaSetColor(diaThemeConfig, THMCFG_PAGETITLE_COLOR, gDefaultPageTitleColor);
+    diaSetColor(diaThemeConfig, THMCFG_HINT_TEXT_COLOR, gDefaultHintTextColor);
+    diaSetInt(diaThemeConfig, THMCFG_COVER_BDM, gShowCovers[0]);
+    diaSetInt(diaThemeConfig, THMCFG_COVER_ETH, gShowCovers[1]);
+    diaSetInt(diaThemeConfig, THMCFG_COVER_HDD, gShowCovers[2]);
+    diaSetInt(diaThemeConfig, THMCFG_COVER_APP, gShowCovers[3]);
+    diaSetInt(diaThemeConfig, THMCFG_ICON_BDM, gShowDiscIcon[0]);
+    diaSetInt(diaThemeConfig, THMCFG_ICON_ETH, gShowDiscIcon[1]);
+    diaSetInt(diaThemeConfig, THMCFG_ICON_HDD, gShowDiscIcon[2]);
+    diaSetInt(diaThemeConfig, THMCFG_ICON_APP, gShowDiscIcon[3]);
+
+    int ret = diaExecuteDialog(diaThemeConfig, -1, 1, NULL);
+    if (ret) {
+        diaGetInt(diaThemeConfig, THMCFG_SHOW_GAME_ID, &gShowGameID);
+        diaGetInt(diaThemeConfig, THMCFG_SHOW_PAGE_TITLE, &gShowPageTitle);
+        diaGetInt(diaThemeConfig, THMCFG_SHOW_HINTS, &gShowHints);
+        diaGetInt(diaThemeConfig, THMCFG_MENU_ICONS, &gShowMenuIcons);
+        diaGetInt(diaThemeConfig, THMCFG_SHOW_INFO_BG, &gShowInfoBG);
+        diaGetColor(diaThemeConfig, THMCFG_PAGETITLE_COLOR, gDefaultPageTitleColor);
+        diaGetColor(diaThemeConfig, THMCFG_HINT_TEXT_COLOR, gDefaultHintTextColor);
+        diaGetInt(diaThemeConfig, THMCFG_COVER_BDM, &gShowCovers[0]);
+        diaGetInt(diaThemeConfig, THMCFG_COVER_ETH, &gShowCovers[1]);
+        diaGetInt(diaThemeConfig, THMCFG_COVER_HDD, &gShowCovers[2]);
+        diaGetInt(diaThemeConfig, THMCFG_COVER_APP, &gShowCovers[3]);
+        diaGetInt(diaThemeConfig, THMCFG_ICON_BDM, &gShowDiscIcon[0]);
+        diaGetInt(diaThemeConfig, THMCFG_ICON_ETH, &gShowDiscIcon[1]);
+        diaGetInt(diaThemeConfig, THMCFG_ICON_HDD, &gShowDiscIcon[2]);
+        diaGetInt(diaThemeConfig, THMCFG_ICON_APP, &gShowDiscIcon[3]);
+
+        thmRecalcItemsListSize();
+    }
+}
+
 void guiShowUIConfig(void)
 {
     int themeID = -1, langID = -1;
@@ -615,6 +711,10 @@ reselect_video_mode:
     guiUIUpdater(1);
 
     int ret = diaExecuteDialog(diaUIConfig, -1, 1, guiUIUpdater);
+    if (ret == UICFG_THMCFG_BTN) {
+        guiShowThemeConfig();
+        goto reselect_video_mode;
+    }
     if (ret) {
         diaGetInt(diaUIConfig, UICFG_LANG, &langID);
         diaGetInt(diaUIConfig, UICFG_THEME, &themeID);
@@ -1289,9 +1389,10 @@ void guiDrawSubMenuHints(void)
     int x = guiAlignSubMenuHints(2, subMenuHints, subMenuIcons, gTheme->fonts[0], 12, 2);
     int y = gTheme->usedHeight - 32;
 
-    x = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? subMenuIcons[0] : subMenuIcons[1], subMenuHints[0], gTheme->fonts[0], x, y, gTheme->textColor);
+    u64 hintColor = GS_SETREG_RGBA(gDefaultHintTextColor[0], gDefaultHintTextColor[1], gDefaultHintTextColor[2], 0x80);
+    x = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? subMenuIcons[0] : subMenuIcons[1], subMenuHints[0], gTheme->fonts[0], x, y, hintColor);
     x += 12;
-    x = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? subMenuIcons[1] : subMenuIcons[0], subMenuHints[1], gTheme->fonts[0], x, y, gTheme->textColor);
+    x = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? subMenuIcons[1] : subMenuIcons[0], subMenuHints[1], gTheme->fonts[0], x, y, hintColor);
 }
 
 static int endIntro = 0; // Break intro loop and start 'Last Played Auto Start' countdown

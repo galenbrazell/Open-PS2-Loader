@@ -69,6 +69,8 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_TEXTCOLOR "text_color"
 #define CONFIG_OPL_UI_TEXTCOLOR "ui_text_color"
 #define CONFIG_OPL_SEL_TEXTCOLOR "sel_text_color"
+#define CONFIG_OPL_PAGETITLE_COLOR "page_title_color"
+#define CONFIG_OPL_HINT_TEXT_COLOR "hint_text_color"
 #define CONFIG_OPL_ENABLE_NOTIFICATIONS "enable_notifications"
 #define CONFIG_OPL_ENABLE_COVERART "enable_coverart"
 #define CONFIG_OPL_WIDESCREEN "wide_screen"
@@ -100,6 +102,30 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_BOOT_SND "enable_boot_snd"
 #define CONFIG_OPL_SFX_VOLUME "sfx_volume"
 #define CONFIG_OPL_BOOT_SND_VOLUME "boot_snd_volume"
+
+// Theme customization keys
+#define CONFIG_OPL_SHOW_GAME_ID "show_game_id"
+#define CONFIG_OPL_SHOW_PAGE_TITLE "show_page_title"
+#define CONFIG_OPL_SHOW_HINTS "show_hints"
+#define CONFIG_OPL_SHOW_COVER_BDM "show_cover_bdm"
+#define CONFIG_OPL_SHOW_COVER_HDD "show_cover_hdd"
+#define CONFIG_OPL_SHOW_COVER_ETH "show_cover_eth"
+#define CONFIG_OPL_SHOW_COVER_APP "show_cover_app"
+#define CONFIG_OPL_SHOW_ICON_BDM "show_icon_bdm"
+#define CONFIG_OPL_SHOW_ICON_HDD "show_icon_hdd"
+#define CONFIG_OPL_SHOW_ICON_ETH "show_icon_eth"
+#define CONFIG_OPL_SHOW_ICON_APP "show_icon_app"
+#define CONFIG_OPL_SHOW_MENU_ICONS "show_menu_icons"
+#define CONFIG_OPL_SHOW_INFO_BG "show_info_bg"
+#define CONFIG_OPL_WLAUNCHELF_PATH "wlaunchelf_path"
+#define CONFIG_OPL_DEFAULT_VMC_0 "default_vmc_0"
+#define CONFIG_OPL_DEFAULT_VMC_1 "default_vmc_1"
+
+// Custom page names
+#define CONFIG_OPL_PAGE_NAME_BDM "page_name_bdm"
+#define CONFIG_OPL_PAGE_NAME_HDD "page_name_hdd"
+#define CONFIG_OPL_PAGE_NAME_ETH "page_name_eth"
+#define CONFIG_OPL_PAGE_NAME_APP "page_name_app"
 
 //Network config keys
 #define CONFIG_NET_ETH_LINKM "eth_linkmode"

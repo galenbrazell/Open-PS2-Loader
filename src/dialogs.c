@@ -187,6 +187,9 @@ struct UIItem diaConfig[] = {
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_HDD_SPINDOWN}}},
     {UI_SPACER},
     {UI_INT, CFG_HDDSPINDOWN, 1, 1, _STR_HINT_SPINDOWN, 0, 0, {.intvalue = {20, 20, 0, 20}}},
+    {UI_BREAK},
+
+    {UI_BUTTON, CFG_EXTRAS_BTN, 1, 1, -1, 0, 0, {.label = {"Extra Settings", -1}}},
     {UI_SPLITTER},
 
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_BDMMODE}}},
@@ -259,6 +262,9 @@ struct UIItem diaUIConfig[] = {
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {NULL, _STR_ENABLE_NOTIFICATIONS}}},
     {UI_SPACER},
     {UI_BOOL, UICFG_NOTIFICATIONS, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_BUTTON, UICFG_THMCFG_BTN, 1, 1, -1, 0, 0, {.label = {"Theme Customization", -1}}},
     {UI_SPLITTER},
 
     {UI_LABEL, 0, 1, 1, -1, -30, 0, {.label = {NULL, _STR_TXTCOLOR}}},
@@ -805,6 +811,144 @@ struct UIItem diaPadMacroConfig[] = {
     // end of dialog
     {UI_TERMINATOR}};
 #endif
+
+// Extra Settings Menu
+struct UIItem diaExtrasConfig[] = {
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {"Extra Settings", -1}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"wLaunchELF Path", -1}}},
+    {UI_SPACER},
+    {UI_STRING, CFG_WLAUNCHELF_PATH, 1, 1, -1, 0, 0, {.stringvalue = {"", "", NULL}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Default VMC Slot 1", -1}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_DEFAULT_VMC_0, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Default VMC Slot 2", -1}}},
+    {UI_SPACER},
+    {UI_ENUM, CFG_DEFAULT_VMC_1, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {"Custom Page Names", -1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"BDM/USB Name", -1}}},
+    {UI_SPACER},
+    {UI_STRING, CFG_PAGE_NAME_BDM, 1, 1, -1, 0, 0, {.stringvalue = {"", "", NULL}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"HDD Name", -1}}},
+    {UI_SPACER},
+    {UI_STRING, CFG_PAGE_NAME_HDD, 1, 1, -1, 0, 0, {.stringvalue = {"", "", NULL}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"ETH/SMB Name", -1}}},
+    {UI_SPACER},
+    {UI_STRING, CFG_PAGE_NAME_ETH, 1, 1, -1, 0, 0, {.stringvalue = {"", "", NULL}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Apps Name", -1}}},
+    {UI_SPACER},
+    {UI_STRING, CFG_PAGE_NAME_APP, 1, 1, -1, 0, 0, {.stringvalue = {"", "", NULL}}},
+    {UI_BREAK},
+
+    // buttons
+    {UI_OK, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_OK}}},
+    {UI_BREAK},
+
+    // end of dialog
+    {UI_TERMINATOR}};
+
+// Theme Customization Menu
+struct UIItem diaThemeConfig[] = {
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {"Theme Customization", -1}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Show Game ID", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_SHOW_GAME_ID, 1, 1, -1, 0, 0, {.intvalue = {1, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Show Page Title", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_SHOW_PAGE_TITLE, 1, 1, -1, 0, 0, {.intvalue = {1, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Show Hints Bar", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_SHOW_HINTS, 1, 1, -1, 0, 0, {.intvalue = {1, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Show Menu Icons", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_MENU_ICONS, 1, 1, -1, 0, 0, {.intvalue = {1, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Show Info BG Art", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_SHOW_INFO_BG, 1, 1, -1, 0, 0, {.intvalue = {1, 1}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, -30, 0, {.label = {"Page Title Color", -1}}},
+    {UI_SPACER},
+    {UI_COLOUR, THMCFG_PAGETITLE_COLOR, 1, 1, -1, -10, 17, {.colourvalue = {0, 0}}},
+    {UI_SPACER},
+    {UI_LABEL, 0, 1, 1, -1, -30, 0, {.label = {"Hint Text Color", -1}}},
+    {UI_SPACER},
+    {UI_COLOUR, THMCFG_HINT_TEXT_COLOR, 1, 1, -1, -10, 17, {.colourvalue = {0, 0}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {"Show Cover Art", -1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -20, 0, {.label = {"- BDM/USB", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_COVER_BDM, 1, 1, -1, -10, 0, {.intvalue = {1, 1}}},
+    {UI_SPACER},
+    {UI_LABEL, 0, 1, 1, -1, -20, 0, {.label = {"- HDD", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_COVER_HDD, 1, 1, -1, -10, 0, {.intvalue = {1, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -20, 0, {.label = {"- ETH/SMB", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_COVER_ETH, 1, 1, -1, -10, 0, {.intvalue = {1, 1}}},
+    {UI_SPACER},
+    {UI_LABEL, 0, 1, 1, -1, -20, 0, {.label = {"- Apps", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_COVER_APP, 1, 1, -1, -10, 0, {.intvalue = {1, 1}}},
+    {UI_SPLITTER},
+
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {"Show Disc Icon", -1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -20, 0, {.label = {"- BDM/USB", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_ICON_BDM, 1, 1, -1, -10, 0, {.intvalue = {1, 1}}},
+    {UI_SPACER},
+    {UI_LABEL, 0, 1, 1, -1, -20, 0, {.label = {"- HDD", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_ICON_HDD, 1, 1, -1, -10, 0, {.intvalue = {1, 1}}},
+    {UI_BREAK},
+
+    {UI_LABEL, 0, 1, 1, -1, -20, 0, {.label = {"- ETH/SMB", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_ICON_ETH, 1, 1, -1, -10, 0, {.intvalue = {1, 1}}},
+    {UI_SPACER},
+    {UI_LABEL, 0, 1, 1, -1, -20, 0, {.label = {"- Apps", -1}}},
+    {UI_SPACER},
+    {UI_BOOL, THMCFG_ICON_APP, 1, 1, -1, -10, 0, {.intvalue = {1, 1}}},
+    {UI_BREAK},
+
+    // buttons
+    {UI_OK, 0, 1, 1, -1, 0, 0, {.label = {NULL, _STR_OK}}},
+    {UI_BREAK},
+
+    // end of dialog
+    {UI_TERMINATOR}};
 
 // About Menu
 struct UIItem diaAbout[] = {

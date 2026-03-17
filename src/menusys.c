@@ -30,6 +30,7 @@ enum MENU_IDs {
     MENU_NET_UPDATE,
     MENU_START_HDL,
 	MENU_START_NBD,
+    MENU_WLAUNCHELF,
     MENU_ABOUT,
     MENU_SAVE_CHANGES,
     MENU_EXIT,
@@ -203,23 +204,43 @@ void menuSaveConfig()
 
 static void menuInitMainMenu(void)
 {
+    const char *parentalLockPassword;
+    int locked = 0;
+
     if (mainMenu)
         submenuDestroy(&mainMenu);
 
-    // initialize the menu
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_SETTINGS, _STR_SETTINGS);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_GFX_SETTINGS, _STR_GFX_SETTINGS);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_AUDIO_SETTINGS, _STR_AUDIO_SETTINGS);
-	submenuAppendItem(&mainMenu, -1, NULL, MENU_CONTROLLER_SETTINGS, _STR_CONTROLLER_SETTINGS);
-	submenuAppendItem(&mainMenu, -1, NULL, MENU_OSD_LANGUAGE_SETTINGS, _STR_OSD_SETTINGS);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_PARENTAL_LOCK, _STR_PARENLOCKCONFIG);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_CONFIG, _STR_NETCONFIG);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_UPDATE, _STR_NET_UPDATE);
-    if (gHDDStartMode && gEnableWrite) // enabled at all?
-        submenuAppendItem(&mainMenu, -1, NULL, MENU_START_HDL, _STR_STARTHDL);
-		submenuAppendItem(&mainMenu, -1, NULL, MENU_START_NBD, _STR_STARTNBD);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_ABOUT, _STR_ABOUT);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_SAVE_CHANGES, _STR_SAVE_CHANGES);
+    // Check if parental lock is active (password set and not yet unlocked this session)
+    if (parentalLockCheckEnabled) {
+        config_set_t *configOPL = configGetByType(CONFIG_OPL);
+        if (configGetStr(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD, &parentalLockPassword) && parentalLockPassword[0] != '\0')
+            locked = 1;
+    }
+
+    if (!locked) {
+        // Full menu — unlocked or no password set
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_SETTINGS, _STR_SETTINGS);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_GFX_SETTINGS, _STR_GFX_SETTINGS);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_AUDIO_SETTINGS, _STR_AUDIO_SETTINGS);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_CONTROLLER_SETTINGS, _STR_CONTROLLER_SETTINGS);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_OSD_LANGUAGE_SETTINGS, _STR_OSD_SETTINGS);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_PARENTAL_LOCK, _STR_PARENLOCKCONFIG);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_CONFIG, _STR_NETCONFIG);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_NET_UPDATE, _STR_NET_UPDATE);
+        if (gHDDStartMode && gEnableWrite)
+            submenuAppendItem(&mainMenu, -1, NULL, MENU_START_HDL, _STR_STARTHDL);
+        if (gHDDStartMode)
+            submenuAppendItem(&mainMenu, -1, NULL, MENU_START_NBD, _STR_STARTNBD);
+        if (gWLaunchELFPath[0] != '\0')
+            submenuAppendItem(&mainMenu, -1, "wLaunchELF", MENU_WLAUNCHELF, -1);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_ABOUT, _STR_ABOUT);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_SAVE_CHANGES, _STR_SAVE_CHANGES);
+    } else {
+        // Locked menu — only safe items + unlock entry point
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_PARENTAL_LOCK, _STR_PARENLOCKCONFIG);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_ABOUT, _STR_ABOUT);
+    }
+
     submenuAppendItem(&mainMenu, -1, NULL, MENU_EXIT, _STR_EXIT);
     submenuAppendItem(&mainMenu, -1, NULL, MENU_POWER_OFF, _STR_POWEROFF);
 
@@ -842,8 +863,10 @@ void menuHandleInputMenu()
             if (menuCheckParentalLock() == 0)
                 guiGameShowOSDLanguageConfig(1);
         } else if (id == MENU_PARENTAL_LOCK) {
-            if (menuCheckParentalLock() == 0)
+            if (menuCheckParentalLock() == 0) {
                 guiShowParentalLockConfig();
+                menuInitMainMenu(); // Rebuild menu now that lock is open
+            }
         } else if (id == MENU_NET_CONFIG) {
             if (menuCheckParentalLock() == 0)
                 guiShowNetConfig();
@@ -856,6 +879,17 @@ void menuHandleInputMenu()
 		} else if (id == MENU_START_NBD) {
             if (menuCheckParentalLock() == 0)
                 handleLwnbdSrv();
+        } else if (id == MENU_WLAUNCHELF) {
+            if (menuCheckParentalLock() == 0) {
+                int fd = open(gWLaunchELFPath, O_RDONLY);
+                if (fd >= 0) {
+                    close(fd);
+                    deinit(NO_EXCEPTION, IO_MODE_SELECTED_ALL);
+                    sysExecElf(gWLaunchELFPath);
+                } else {
+                    guiMsgBox(_l(_STR_ERR_FILE_INVALID), 0, NULL);
+                }
+            }
         } else if (id == MENU_ABOUT) {
 				guiShowAbout();
         } else if (id == MENU_SAVE_CHANGES) {
@@ -869,6 +903,7 @@ void menuHandleInputMenu()
                 saveConfig(CONFIG_OPL | CONFIG_NETWORK, 1);
 #endif
                 menuSetParentalLockCheckState(1); //Re-enable parental lock check.
+                menuInitMainMenu(); // Rebuild menu to reflect re-locked state
             }
         } else if (id == MENU_EXIT) {
             if (guiMsgBox(_l(_STR_CONFIRMATION_EXIT), 1, NULL))
@@ -895,7 +930,11 @@ void menuRenderMain()
     _menuRequestConfig();
 
     WaitSema(menuSemaId);
-    theme_element_t *elem = gTheme->mainElems.first;
+    // Use appsMainElems when viewing the APPS page, if available
+    item_list_t *support = selected_item->item->userdata;
+    theme_element_t *elem = (support && support->mode == APP_MODE && gTheme->appsMainElems.first)
+                                ? gTheme->appsMainElems.first
+                                : gTheme->mainElems.first;
     while (elem) {
         if (elem->drawElem)
             elem->drawElem(selected_item, selected_item->item->current, itemConfig, elem);
@@ -955,13 +994,21 @@ void menuRenderInfo()
     _menuRequestConfig();
 
     WaitSema(menuSemaId);
-    theme_element_t *elem = gTheme->infoElems.first;
+    // Use appsInfoElems when viewing the APPS page, if available
+    item_list_t *support = selected_item->item->userdata;
+    theme_element_t *elem = (support && support->mode == APP_MODE && gTheme->appsInfoElems.first)
+                                ? gTheme->appsInfoElems.first
+                                : gTheme->infoElems.first;
+    // Skip first element (always background) if info BG art is disabled
+    if (!gShowInfoBG && elem)
+        elem = elem->next;
     while (elem) {
         if (elem->drawElem)
             elem->drawElem(selected_item, selected_item->item->current, itemConfig, elem);
 
         elem = elem->next;
     }
+
     SignalSema(menuSemaId);
 }
 
