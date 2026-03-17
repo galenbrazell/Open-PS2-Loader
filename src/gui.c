@@ -870,7 +870,7 @@ void guiShowParentalLockConfig(void)
     int result;
     char password[CONFIG_KEY_VALUE_LEN];
     config_set_t *configOPL = configGetByType(CONFIG_OPL);
-    const char *inactivityModes[] = {"Off", "15 min", "30 min", "1 hour", "2 hours", NULL};
+    const char *inactivityModes[] = {"Off", "Test 30s", "15 min", "30 min", "1 hour", "2 hours", NULL};
 
     // Set current values
     configGetStrCopy(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD, password, CONFIG_KEY_VALUE_LEN); //This will return the current password, or a blank string if it is not set.
@@ -900,6 +900,9 @@ void guiShowParentalLockConfig(void)
         }
 
         menuSetParentalLockCheckState(1);
+
+        // Auto-save immediately — Save Changes is hidden when parental lock is active
+        saveConfig(CONFIG_OPL, 0);
 
         // Refresh hints on all active modes so Options hint appears/disappears
         applyConfig(-1, -1);
@@ -1573,7 +1576,7 @@ void guiIntroLoop(void)
 
 void guiMainLoop(void)
 {
-    static const int inactivityMinutes[] = {0, 15, 30, 60, 120};
+    static const int inactivitySeconds[] = {0, 30, 15*60, 30*60, 60*60, 120*60};
 
     guiResetNotifications();
     guiCheckNotifications(1, 1);
@@ -1588,14 +1591,6 @@ void guiMainLoop(void)
 
         // Read the pad states to prepare for input processing in the screen handler
         guiReadPads();
-
-        // Inactivity power-off timer
-        if (gInactivityTimeout > 0 && gInactivityTimeout < 5) {
-            int timeoutSecs = inactivityMinutes[gInactivityTimeout] * 60;
-            clock_t elapsed = (clock() - lastActivityClock) / CLOCKS_PER_SEC;
-            if (elapsed >= timeoutSecs)
-                sysPowerOff();
-        }
 
         // handle inputs and render screen
         guiShow();
@@ -1618,6 +1613,13 @@ void guiMainLoop(void)
 
         if (gFrameHook)
             gFrameHook();
+
+        // Inactivity power-off timer — must be after guiEndFrame so no semaphores are held
+        if (gInactivityTimeout > 0 && gInactivityTimeout < 6) {
+            clock_t elapsed = (clock() - lastActivityClock) / CLOCKS_PER_SEC;
+            if (elapsed >= inactivitySeconds[gInactivityTimeout])
+                sysPowerOff();
+        }
     }
 }
 
