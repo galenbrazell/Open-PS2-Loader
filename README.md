@@ -19,6 +19,74 @@ This updated and modified version includes:
 
 Thanks to ackmax, AKuHAK, bignaux, israpps, KrahJohlito, uyjulian and all other contributors of Open PS2 Loader !
 
+---
+
+### About This Fork
+
+Forked from SvenGDK's as it was included with PFS Batchkit (https://github.com/GDX-X/PFS-BatchKit-Manager) and was more stable with my PS2 build than latest stable or dev builds by PS2Homebrew (https://github.com/ps2homebrew/Open-PS2-Loader) on the date of 3/17/2026
+
+Tested and deployed on:
+PS2 SCPH 5001(dex)
+Running FreeMCBoot/FMCB 1.9
+OEM PS2 HDD Network adapter w/ Bitfunx FAT v2.0 Adapter Mod
+2TB Crucial BX500 SATA 2.5 inch with 3D printed adapter, traditional PFS PS2 partionioning for stability.
+
+Intention was to create a direct OPL boot PS2/PS1 library that could be parent locked down so it all "just works".
+UX was prime concern. Features needed to include adding app_case PNG support for PS1 POPSTARTER APPS/ELF section (stable 1.1 has it but this is a pre 1.1 fork), automatic default VMC use, so no manual setup of memory cards per game, disabling of certain menu items when parental lock is on, adding art control fixes such as hiding or displaying discs or covers and background art on info page, coloring of some other text items, multiplayer info in cfgs to display on info page (replacing Size: key), renaming of pages to declare a PS1/PS2 section of games, automatic powering down after set time limit, minor bug fixes, and more.
+
+---
+
+<details>
+  <summary> <b> Fork Features </b> </summary>
+<p>
+
+This fork adds the following features on top of SvenGDK's build:
+
+#### appsMain Theme Support
+- Themes can define separate main and info page layouts for the APPS menu using `appsMain` and `appsInfo` element prefixes in the theme config
+- APPS cover art uses a dedicated `apps_case` overlay for POPSTARTER jewel case style artwork
+
+#### Theme Customization (Display Settings > Theme Customization)
+- Show/hide: Game ID, Page Title, Hints Bar, Menu Icons, Info BG Art
+- Per-mode show/hide for Cover Art and Disc Icon (BDM, HDD, ETH, APP)
+- Page Title Color and Hint Text Color pickers
+- Game list dynamically recalculates height when elements are hidden
+
+#### Custom Page Names (Settings > Extra Settings)
+- Rename any mode's page title (e.g. "HDD Games" → "PS2", "Apps" → "PS1")
+- Stored in `conf_opl.cfg`, leave empty to use the default
+
+#### Remember Last Played — APPS/POPSTARTER Fix
+- APPS mode now saves `last_played` using the app title for unique matching (POPSTARTER games share ELF names)
+- All modes save `last_played_mode` so OPL boots to the correct page on startup
+- Default Device is greyed out when Remember Last Played is active
+
+#### wLaunchELF Integration (Settings > Extra Settings)
+- Configurable path to wLaunchELF, appears in the main menu when set
+- Validates the file exists before launching, deinits OPL cleanly
+
+#### Default VMC (Settings > Extra Settings)
+- Global default VMC Slot 1 and Slot 2, auto-applied on game launch
+- Only applies when a per-game VMC is not already configured
+
+#### Parental Lock Improvements
+- Sensitive menu items are hidden entirely when locked (not just password-gated)
+- Locked menu shows only: Parental Lock, About, Exit, Power Off
+- Full menu appears immediately after successful unlock
+- Fixed: Start NBD Server was always visible regardless of HDD mode
+
+#### Info Page Improvements
+- Fixed two missing APPS badges: `#Format` (ELF) and `#Media` (defaults to CD)
+- Players data replaces the Size line when `Players=` key exists in the game cfg
+- Tiered parsing: `Players=players/N` → `PlayersText=N` fallback → keep original Size
+- Works across all modes: HDD, BDM, ETH, and APPS
+
+#### Development Notes
+Portions of this fork were developed with AI assistance (Claude, Anthropic). All code was reviewed, tested, and validated on PS2 hardware.
+
+</p>
+</details>
+
 <details>
   <summary> <b> Releases </b> </summary>
 <p>
@@ -65,6 +133,33 @@ When you download and extract the latest Open PS2 Loader from this repo, you wil
 <details>
   <summary> <b> How to compile this version </b> </summary>
 <p>
+
+#### Using Docker (recommended)
+
+```sh
+# Pull the PS2 dev Docker image
+docker pull ps2dev/ps2dev:v1.2.0
+
+# Launch the container from the repo root
+docker run -it -v "${PWD}:/src" ps2dev/ps2dev:v1.2.0 sh
+
+# Inside the container:
+apk add build-base git zip
+
+# Patch missing USB definitions
+cat >> $PS2SDK/common/include/usbhdfsd-common.h << 'EOF'
+#define USBMASS_IOCTL_CHECK_CHAIN 0x0004
+#define USBMASS_IOCTL_GET_FRAGLIST 0x0005
+#define USBMASS_IOCTL_GET_DEVICE_NUMBER 0x0006
+EOF
+
+# Build
+cd /src
+make clean
+make
+```
+
+#### Manual Setup
 
 - Install ps2dev requirements
 - Use [ps2dev v1.2.0](https://github.com/ps2dev/ps2dev/releases/tag/v1.2.0)

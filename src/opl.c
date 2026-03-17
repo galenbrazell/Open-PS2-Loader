@@ -194,6 +194,8 @@ int gEnableWrite;
 char gBDMPrefix[32];
 char gETHPrefix[32];
 int gRememberLastPlayed;
+int gParentalLockHideOpts;
+int gInactivityTimeout;
 int KeyPressedOnce;
 int gAutoStartLastPlayed;
 int RemainSecs, DisableCron;
@@ -230,6 +232,8 @@ void moduleUpdateMenu(int mode, int themeChanged, int langChanged)
     // refresh Hints
     menuRemoveHints(&mod->menuItem);
 
+    int locked = gParentalLockHideOpts && menuIsParentalLocked();
+
     menuAddHint(&mod->menuItem, _STR_MENU, START_ICON);
     if (!mod->support->enabled)
         menuAddHint(&mod->menuItem, _STR_START_DEVICE, gSelectButton == KEY_CIRCLE ? CIRCLE_ICON : CROSS_ICON);
@@ -239,7 +243,7 @@ void moduleUpdateMenu(int mode, int themeChanged, int langChanged)
         if (gTheme->infoElems.first)
             menuAddHint(&mod->menuItem, _STR_INFO, SQUARE_ICON);
 
-        if (!(mod->support->flags & MODE_FLAG_NO_COMPAT) || gEnableWrite)
+        if (!locked && (!(mod->support->flags & MODE_FLAG_NO_COMPAT) || gEnableWrite))
             menuAddHint(&mod->menuItem, _STR_OPTIONS, TRIANGLE_ICON);
 
         menuAddHint(&mod->menuItem, _STR_REFRESH, SELECT_ICON);
@@ -322,6 +326,10 @@ static void itemExecSquare(struct menu_item *curMenu)
 static void itemExecTriangle(struct menu_item *curMenu)
 {
     if (!curMenu->current)
+        return;
+
+    // Silently ignore when restrict options is active
+    if (gParentalLockHideOpts && menuIsParentalLocked())
         return;
 
     item_list_t *support = curMenu->userdata;
@@ -895,6 +903,8 @@ static void _loadConfig()
             configGetStrCopy(configOPL, CONFIG_OPL_BDM_PREFIX, gBDMPrefix, sizeof(gBDMPrefix));
             configGetStrCopy(configOPL, CONFIG_OPL_ETH_PREFIX, gETHPrefix, sizeof(gETHPrefix));
             configGetInt(configOPL, CONFIG_OPL_REMEMBER_LAST, &gRememberLastPlayed);
+            configGetInt(configOPL, CONFIG_OPL_PARENTAL_LOCK_HIDE_OPTS, &gParentalLockHideOpts);
+            configGetInt(configOPL, CONFIG_OPL_INACTIVITY_TIMEOUT, &gInactivityTimeout);
             configGetInt(configOPL, CONFIG_OPL_AUTOSTART_LAST, &gAutoStartLastPlayed);
             configGetInt(configOPL, CONFIG_OPL_BDM_MODE, &gBDMStartMode);
             configGetInt(configOPL, CONFIG_OPL_HDD_MODE, &gHDDStartMode);
@@ -1071,6 +1081,8 @@ static void _saveConfig()
         configSetStr(configOPL, CONFIG_OPL_BDM_PREFIX, gBDMPrefix);
         configSetStr(configOPL, CONFIG_OPL_ETH_PREFIX, gETHPrefix);
         configSetInt(configOPL, CONFIG_OPL_REMEMBER_LAST, gRememberLastPlayed);
+        configSetInt(configOPL, CONFIG_OPL_PARENTAL_LOCK_HIDE_OPTS, gParentalLockHideOpts);
+        configSetInt(configOPL, CONFIG_OPL_INACTIVITY_TIMEOUT, gInactivityTimeout);
         configSetInt(configOPL, CONFIG_OPL_AUTOSTART_LAST, gAutoStartLastPlayed);
         configSetInt(configOPL, CONFIG_OPL_BDM_MODE, gBDMStartMode);
         configSetInt(configOPL, CONFIG_OPL_HDD_MODE, gHDDStartMode);
@@ -1785,6 +1797,8 @@ static void setDefaults(void)
     gHDDGameListCache = 0;
     gEnableWrite = 0;
     gRememberLastPlayed = 0;
+    gParentalLockHideOpts = 0;
+    gInactivityTimeout = 0;
     gAutoStartLastPlayed = 9;
     gSelectButton = KEY_CIRCLE; //Default to Japan.
     gBDMPrefix[0] = '\0';

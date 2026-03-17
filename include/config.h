@@ -98,6 +98,8 @@ enum CONFIG_INDEX {
 #define CONFIG_OPL_ENABLE_FW "enable_firewire"
 #define CONFIG_OPL_SWAP_SEL_BUTTON "swap_select_btn"
 #define CONFIG_OPL_PARENTAL_LOCK_PWD "parental_lock_password"
+#define CONFIG_OPL_PARENTAL_LOCK_HIDE_OPTS "parental_lock_hide_opts"
+#define CONFIG_OPL_INACTIVITY_TIMEOUT "inactivity_timeout"
 #define CONFIG_OPL_SFX "enable_sfx"
 #define CONFIG_OPL_BOOT_SND "enable_boot_snd"
 #define CONFIG_OPL_SFX_VOLUME "sfx_volume"

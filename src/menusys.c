@@ -235,14 +235,13 @@ static void menuInitMainMenu(void)
             submenuAppendItem(&mainMenu, -1, "wLaunchELF", MENU_WLAUNCHELF, -1);
         submenuAppendItem(&mainMenu, -1, NULL, MENU_ABOUT, _STR_ABOUT);
         submenuAppendItem(&mainMenu, -1, NULL, MENU_SAVE_CHANGES, _STR_SAVE_CHANGES);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_EXIT, _STR_EXIT);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_POWER_OFF, _STR_POWEROFF);
     } else {
-        // Locked menu — only safe items + unlock entry point
+        // Locked menu — only unlock entry and power off
         submenuAppendItem(&mainMenu, -1, NULL, MENU_PARENTAL_LOCK, _STR_PARENLOCKCONFIG);
-        submenuAppendItem(&mainMenu, -1, NULL, MENU_ABOUT, _STR_ABOUT);
+        submenuAppendItem(&mainMenu, -1, NULL, MENU_POWER_OFF, _STR_POWEROFF);
     }
-
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_EXIT, _STR_EXIT);
-    submenuAppendItem(&mainMenu, -1, NULL, MENU_POWER_OFF, _STR_POWEROFF);
 
     mainMenuCurrent = mainMenu;
 }
@@ -814,6 +813,17 @@ int menuCheckParentalLock(void)
     }
 
     return result;
+}
+
+int menuIsParentalLocked(void)
+{
+    const char *parentalLockPassword;
+    if (parentalLockCheckEnabled) {
+        config_set_t *configOPL = configGetByType(CONFIG_OPL);
+        if (configGetStr(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD, &parentalLockPassword) && parentalLockPassword[0] != '\0')
+            return 1;
+    }
+    return 0;
 }
 
 void menuHandleInputMenu()

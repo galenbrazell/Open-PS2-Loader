@@ -870,14 +870,20 @@ void guiShowParentalLockConfig(void)
     int result;
     char password[CONFIG_KEY_VALUE_LEN];
     config_set_t *configOPL = configGetByType(CONFIG_OPL);
+    const char *inactivityModes[] = {"Off", "15 min", "30 min", "1 hour", "2 hours", NULL};
 
     // Set current values
     configGetStrCopy(configOPL, CONFIG_OPL_PARENTAL_LOCK_PWD, password, CONFIG_KEY_VALUE_LEN); //This will return the current password, or a blank string if it is not set.
     diaSetString(diaParentalLockConfig, CFG_PARENLOCK_PASSWORD, password);
+    diaSetInt(diaParentalLockConfig, CFG_PARENLOCK_HIDE_OPTS, gParentalLockHideOpts);
+    diaSetEnum(diaParentalLockConfig, CFG_INACTIVITY_TIMEOUT, inactivityModes);
+    diaSetInt(diaParentalLockConfig, CFG_INACTIVITY_TIMEOUT, gInactivityTimeout);
 
     result = diaExecuteDialog(diaParentalLockConfig, -1, 1, NULL);
     if (result) {
         diaGetString(diaParentalLockConfig, CFG_PARENLOCK_PASSWORD, password, CONFIG_KEY_VALUE_LEN);
+        diaGetInt(diaParentalLockConfig, CFG_PARENLOCK_HIDE_OPTS, &gParentalLockHideOpts);
+        diaGetInt(diaParentalLockConfig, CFG_INACTIVITY_TIMEOUT, &gInactivityTimeout);
 
         if (strlen(password) > 0) {
             if (strncmp(OPL_PARENTAL_LOCK_MASTER_PASS, password, CONFIG_KEY_VALUE_LEN) != 0) {
@@ -894,6 +900,9 @@ void guiShowParentalLockConfig(void)
         }
 
         menuSetParentalLockCheckState(1);
+
+        // Refresh hints on all active modes so Options hint appears/disappears
+        applyConfig(-1, -1);
     }
 }
 
@@ -1473,11 +1482,14 @@ static void guiDrawOverlays()
     //        fntRenderString(gTheme->fonts[0], 0, screenHeight - 24, ALIGN_NONE, 0, 0, blurttext, GS_SETREG_RGBA(255, 255, 0, 128));
 }
 
+static clock_t lastActivityClock = 0;
+
 static void guiReadPads()
 {
-    if (readPads())
+    if (readPads()) {
         guiInactiveFrames = 0;
-    else
+        lastActivityClock = clock();
+    } else
         guiInactiveFrames++;
 }
 
@@ -1561,17 +1573,29 @@ void guiIntroLoop(void)
 
 void guiMainLoop(void)
 {
+    static const int inactivityMinutes[] = {0, 15, 30, 60, 120};
+
     guiResetNotifications();
     guiCheckNotifications(1, 1);
 	
     if (gOPLPart[0] != '\0')
         showPartPopup = 1;
 
+    lastActivityClock = clock();
+
     while (!gTerminate) {
         guiStartFrame();
 
         // Read the pad states to prepare for input processing in the screen handler
         guiReadPads();
+
+        // Inactivity power-off timer
+        if (gInactivityTimeout > 0 && gInactivityTimeout < 5) {
+            int timeoutSecs = inactivityMinutes[gInactivityTimeout] * 60;
+            clock_t elapsed = (clock() - lastActivityClock) / CLOCKS_PER_SEC;
+            if (elapsed >= timeoutSecs)
+                sysPowerOff();
+        }
 
         // handle inputs and render screen
         guiShow();

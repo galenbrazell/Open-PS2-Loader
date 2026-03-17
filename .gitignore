@@ -20,3 +20,23 @@ DETAILED_CHANGELOG
 #
 pc/iso2usbld/bin/iso2usbld
 IOPRP_img.c
+
+# Build artifacts
+*.o
+*.elf
+*.ELF
+*.irx
+*.map
+obj/
+asm/
+Makefile.bak
+opl.elf
+opl.map
+opl_stripped.elf
+OPNPS2LD*.ELF
+ee_core/ee_core.elf
+ee_core/ee_core.map
+ee_core/obj/
+elfldr/*.o
+elfldr/*.elf
+elfldr/*.map

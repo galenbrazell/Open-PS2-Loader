@@ -200,6 +200,9 @@ extern char gETHPrefix[32];
 
 extern int gRememberLastPlayed;
 
+extern int gParentalLockHideOpts;
+extern int gInactivityTimeout; // 0=off, 15=15min, 30=30min, 60=1hr, 120=2hr
+
 // Last Played Auto Start
 extern int KeyPressedOnce;
 extern int gAutoStartLastPlayed;
