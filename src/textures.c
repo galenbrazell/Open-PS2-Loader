@@ -86,6 +86,7 @@ extern void *Vmode_pal_png;
 
 extern void *logo_png;
 extern void *case_png;
+extern void *apps_case_png;
 
 static int texPngLoad(GSTEXTURE *texture, const char *path);
 static int texPngLoadInternal(GSTEXTURE *texture, int texId);
@@ -180,6 +181,7 @@ static texture_t internalDefault[TEXTURES_COUNT] = {
     {VMODE_PAL, "Vmode_pal", &Vmode_pal_png},
     {LOGO_PICTURE, "logo", &logo_png},
     {CASE_OVERLAY, "case", &case_png},
+    {APPS_CASE_OVERLAY, "apps_case", &apps_case_png},
 };
 
 int texLookupInternalTexId(const char *name)
