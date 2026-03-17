@@ -368,6 +368,7 @@ static void bdmLaunchGame(int id, config_set_t *configSet)
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
+        configSetInt(configGetByType(CONFIG_LAST), "last_played_mode", BDM_MODE);
         saveConfig(CONFIG_LAST, 0);
     }
 

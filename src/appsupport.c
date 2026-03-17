@@ -2,6 +2,7 @@
 #include "include/lang.h"
 #include "include/gui.h"
 #include "include/appsupport.h"
+#include "include/supportbase.h"
 #include "include/themes.h"
 #include "include/system.h"
 #include "include/ioman.h"
@@ -385,6 +386,13 @@ static void appLaunchItem(int id, config_set_t *configSet)
             argc = 2;
         }
 
+        // Save last played app (use title for unique matching, since POPSTARTER ELFs share names)
+        if (gRememberLastPlayed) {
+            configSetStr(configGetByType(CONFIG_LAST), "last_played", appsList[id].title);
+            configSetInt(configGetByType(CONFIG_LAST), "last_played_mode", APP_MODE);
+            saveConfig(CONFIG_LAST, 0);
+        }
+
         deinit(UNMOUNT_EXCEPTION, mode); // CAREFUL: deinit will call appCleanUp, so configApps/cur will be freed
         sysExecElf(filename); //arg not ready yet
 		//sysLoadElf(filename, argc, argv);
@@ -421,9 +429,23 @@ static config_set_t *appGetConfig(int id)
         snprintf(path, sizeof(path), "%s/%s", appsList[id].path, appsList[id].boot);
         configSetStr(config, CONFIG_ITEM_STARTUP, path);
 
-        snprintf(tmp, sizeof(tmp), "%.2f", appGetELFSize(path));
-        configSetStr(config, CONFIG_ITEM_SIZE, tmp);
+        // Set #Size only once — Players override if available, otherwise ELF size
+        if (!sbOverrideSizeWithPlayers(config)) {
+            snprintf(tmp, sizeof(tmp), "%.2f", appGetELFSize(path));
+            configSetStr(config, CONFIG_ITEM_SIZE, tmp);
+        }
     }
+
+    // APPS are always ELF format — fixes the missing ELF badge on info page
+    configSetStr(config, CONFIG_ITEM_FORMAT, "ELF");
+
+    // Default #Media to CD if not already set — fills the badge gap
+    {
+        const char *existingMedia = NULL;
+        if (!configGetStr(config, CONFIG_ITEM_MEDIA, &existingMedia))
+            configSetStr(config, CONFIG_ITEM_MEDIA, "CD");
+    }
+
     return config;
 }
 

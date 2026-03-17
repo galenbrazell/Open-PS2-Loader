@@ -628,6 +628,7 @@ static void ethLaunchGame(int id, config_set_t *configSet)
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
+        configSetInt(configGetByType(CONFIG_LAST), "last_played_mode", ETH_MODE);
         saveConfig(CONFIG_LAST, 0);
     }
 

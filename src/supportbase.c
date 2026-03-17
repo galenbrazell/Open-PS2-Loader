@@ -768,6 +768,45 @@ void sbRename(base_game_info_t **list, const char *prefix, const char *sep, int 
     }
 }
 
+// Tiered Players override for #Size:
+// 1. Players=players/N — use N if present
+// 2. Players key exists but N is empty — fallback to PlayersText=N
+// 3. Both empty — default to "Players: Single" (key existed, showing intent)
+// 4. No Players key at all — return 0, don't touch #Size
+int sbOverrideSizeWithPlayers(config_set_t *config)
+{
+    const char *players = NULL;
+    const char *num = NULL;
+    char playerLine[32];
+
+    if (!configGetStr(config, "Players", &players))
+        return 0; // No Players key — leave #Size alone
+
+    // Try to extract number after '/'
+    const char *psep = strchr(players, '/');
+    if (psep)
+        num = psep + 1;
+    else
+        num = players;
+
+    // If number is empty or just whitespace, try PlayersText fallback
+    if (!num[0] || num[0] == '\r' || num[0] == '\n') {
+        const char *playersText = NULL;
+        if (configGetStr(config, "PlayersText", &playersText) && playersText[0] >= '1' && playersText[0] <= '9')
+            num = playersText;
+        else
+            num = NULL; // Both empty — will default to Single
+    }
+
+    if (!num || (num[0] == '1' && (num[1] == '\0' || num[1] == '\r' || num[1] == '\n')))
+        snprintf(playerLine, sizeof(playerLine), "Players: Single");
+    else
+        snprintf(playerLine, sizeof(playerLine), "Players: Up to %s", num);
+
+    configSetStr(config, CONFIG_ITEM_SIZE, playerLine);
+    return 1;
+}
+
 config_set_t *sbPopulateConfig(base_game_info_t *game, const char *prefix, const char *sep)
 {
     char path[256];
@@ -776,7 +815,10 @@ config_set_t *sbPopulateConfig(base_game_info_t *game, const char *prefix, const
     configRead(config); //Does not matter if the config file could be loaded or not.
 
     configSetStr(config, CONFIG_ITEM_NAME, game->name);
-    configSetInt(config, CONFIG_ITEM_SIZE, game->sizeMB);
+
+    // Set #Size only once — Players override if available, otherwise game size
+    if (!sbOverrideSizeWithPlayers(config))
+        configSetInt(config, CONFIG_ITEM_SIZE, game->sizeMB);
 
     configSetStr(config, CONFIG_ITEM_FORMAT, game->format != GAME_FORMAT_USBLD ? "ISO" : "UL");
     configSetStr(config, CONFIG_ITEM_MEDIA, game->media == SCECdPS2CD ? "CD" : "DVD");

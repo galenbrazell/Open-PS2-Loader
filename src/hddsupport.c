@@ -428,6 +428,7 @@ void hddLaunchGame(int id, config_set_t *configSet)
 
     if (gRememberLastPlayed) {
         configSetStr(configGetByType(CONFIG_LAST), "last_played", game->startup);
+        configSetInt(configGetByType(CONFIG_LAST), "last_played_mode", HDD_MODE);
         saveConfig(CONFIG_LAST, 0);
     }
 
@@ -517,7 +518,11 @@ static config_set_t *hddGetConfig(int id)
     configRead(config); //Does not matter if the config file exists or not.
 
     configSetStr(config, CONFIG_ITEM_NAME, game->name);
-    configSetInt(config, CONFIG_ITEM_SIZE, game->total_size_in_kb >> 10);
+
+    // Set #Size only once — Players override if available, otherwise game size
+    if (!sbOverrideSizeWithPlayers(config))
+        configSetInt(config, CONFIG_ITEM_SIZE, game->total_size_in_kb >> 10);
+
     configSetStr(config, CONFIG_ITEM_FORMAT, "HDL");
     configSetStr(config, CONFIG_ITEM_MEDIA, game->disctype == SCECdPS2CD ? "CD" : "DVD");
     configSetStr(config, CONFIG_ITEM_STARTUP, game->startup);
