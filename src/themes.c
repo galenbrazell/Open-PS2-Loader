@@ -1,5 +1,6 @@
 #include "include/opl.h"
 #include "include/themes.h"
+#include "include/iosupport.h"
 #include "include/util.h"
 #include "include/gui.h"
 #include "include/renderman.h"
@@ -13,6 +14,7 @@
 #define MENU_POS_V 50
 #define HINT_HEIGHT 32
 #define DECORATOR_SIZE 20
+#define MENU_ICONS_HEIGHT 50
 
 extern const char conf_theme_OPL_cfg;
 extern u16 size_conf_theme_OPL_cfg;
@@ -213,8 +215,18 @@ static void drawAttributeText(struct menu_list *menu, struct submenu_list *item,
         }
         if (mutableText->currentValue) {
             char result[300];
-            if (mutableText->displayMode == DISPLAY_NEVER) {
-                if (!strncmp(mutableText->alias, _l(_STR_SIZE), strlen(_l(_STR_SIZE)))) {
+            int isSizeAttr = !strncmp(mutableText->alias, _l(_STR_SIZE), strlen(_l(_STR_SIZE)));
+            // If Size attribute has a non-numeric value (e.g. Players override), render it directly
+            int isSizeOverride = isSizeAttr && (mutableText->currentValue[0] < '0' || mutableText->currentValue[0] > '9');
+
+            if (isSizeOverride) {
+                // Render the override value directly — no alias prefix, no MiB suffix
+                if (mutableText->sizingMode == SIZING_NONE)
+                    fntRenderString(elem->font, elem->posX, elem->posY, elem->aligned, 0, 0, mutableText->currentValue, elem->color);
+                else
+                    fntRenderString(elem->font, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, mutableText->currentValue, elem->color);
+            } else if (mutableText->displayMode == DISPLAY_NEVER) {
+                if (isSizeAttr) {
                     snprintf(result, sizeof(result), "%s MiB", mutableText->currentValue);
                     if (mutableText->sizingMode == SIZING_NONE)
                         fntRenderString(elem->font, elem->posX, elem->posY, elem->aligned, 0, 0, result, elem->color);
@@ -227,7 +239,7 @@ static void drawAttributeText(struct menu_list *menu, struct submenu_list *item,
                         fntRenderString(elem->font, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, mutableText->currentValue, elem->color);
                 }
             } else {
-                if (!strncmp(mutableText->alias, _l(_STR_SIZE), strlen(_l(_STR_SIZE))))
+                if (isSizeAttr)
                     snprintf(result, sizeof(result), "%s%s MiB", mutableText->alias, mutableText->currentValue);
                 else
                     snprintf(result, sizeof(result), "%s%s", mutableText->alias, mutableText->currentValue);
@@ -453,6 +465,8 @@ static mutable_image_t *initMutableImage(const char *themePath, config_set_t *th
 
     findDuplicate(theme->mainElems.first, cachePattern, defaultTexture, overlayTexture, mutableImage);
     findDuplicate(theme->infoElems.first, cachePattern, defaultTexture, overlayTexture, mutableImage);
+    findDuplicate(theme->appsMainElems.first, cachePattern, defaultTexture, overlayTexture, mutableImage);
+    findDuplicate(theme->appsInfoElems.first, cachePattern, defaultTexture, overlayTexture, mutableImage);
 
     if (cachePattern && !mutableImage->cache) {
         if (type == ELEM_TYPE_ATTRIBUTE_IMAGE)
@@ -515,6 +529,16 @@ static GSTEXTURE *getGameImageTexture(image_cache_t *cache, void *support, struc
 static void drawGameImage(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
     mutable_image_t *gameImage = (mutable_image_t *)elem->extended;
+
+    // Per-mode visibility check for covers and disc icons
+    if (gameImage->cache && menu->item->userdata) {
+        item_list_t *support = (item_list_t *)menu->item->userdata;
+        if (!strcmp(gameImage->cache->suffix, "COV") && !gShowCovers[support->mode])
+            return;
+        if (!strcmp(gameImage->cache->suffix, "ICO") && !gShowDiscIcon[support->mode])
+            return;
+    }
+
     if (item) {
         GSTEXTURE *texture = getGameImageTexture(gameImage->cache, menu->item->userdata, &item->item);
         if (!texture || !texture->Mem) {
@@ -732,6 +756,9 @@ static void initBackground(const char *themePath, config_set_t *themeConfig, the
 
 static void drawMenuIcon(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
+    if (!gShowMenuIcons)
+        return;
+
     GSTEXTURE *menuIconTex = thmGetTexture(menu->item->icon_id);
     if (menuIconTex && menuIconTex->Mem)
         rmDrawPixmap(menuIconTex, elem->posX, elem->posY, elem->aligned, elem->width, elem->height, elem->scaled, gDefaultCol);
@@ -739,6 +766,9 @@ static void drawMenuIcon(struct menu_list *menu, struct submenu_list *item, conf
 
 static void drawMenuText(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
+    if (!gShowPageTitle)
+        return;
+
     GSTEXTURE *leftIconTex = NULL, *rightIconTex = NULL;
     if (menu->prev != NULL)
         leftIconTex = thmGetTexture(LEFT_ICON);
@@ -757,7 +787,9 @@ static void drawMenuText(struct menu_list *menu, struct submenu_list *item, conf
         if (rightIconTex && rightIconTex->Mem)
             rmDrawPixmap(rightIconTex, elem->posX + elem->width, elem->posY, elem->aligned, 20, 20, elem->scaled, gDefaultCol);
     }
-    fntRenderString(elem->font, elem->posX, elem->posY, elem->aligned, 0, 0, menuItemGetText(menu->item), elem->color);
+    // Use custom page title color if set, otherwise fall back to theme element color
+    u64 titleColor = GS_SETREG_RGBA(gDefaultPageTitleColor[0], gDefaultPageTitleColor[1], gDefaultPageTitleColor[2], 0x80);
+    fntRenderString(elem->font, elem->posX, elem->posY, elem->aligned, 0, 0, menuItemGetText(menu->item), titleColor);
 }
 
 static void drawItemsList(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
@@ -829,6 +861,9 @@ static void initItemsList(const char *themePath, config_set_t *themeConfig, them
 
 static void drawItemText(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
+    if (!gShowGameID)
+        return;
+
     if (item) {
         item_list_t *support = menu->item->userdata;
         fntRenderString(elem->font, elem->posX, elem->posY, elem->aligned, 0, 0, support->itemGetStartup(item->item.id), elem->color);
@@ -837,6 +872,9 @@ static void drawItemText(struct menu_list *menu, struct submenu_list *item, conf
 
 static void drawHintText(struct menu_list *menu, struct submenu_list *item, config_set_t *config, struct theme_element *elem)
 {
+    if (!gShowHints)
+        return;
+
     menu_hint_item_t *hint = menu->item->hints;
     if (hint) {
         int x = elem->posX;
@@ -844,8 +882,9 @@ static void drawHintText(struct menu_list *menu, struct submenu_list *item, conf
         if (elem->aligned)
             x = guiAlignMenuHints(hint, elem->font, elem->width);
 
+        u64 hintColor = GS_SETREG_RGBA(gDefaultHintTextColor[0], gDefaultHintTextColor[1], gDefaultHintTextColor[2], 0x80);
         for (; hint; hint = hint->next) {
-            x = guiDrawIconAndText(hint->icon_id, hint->text_id, elem->font, x, elem->posY, elem->color);
+            x = guiDrawIconAndText(hint->icon_id, hint->text_id, elem->font, x, elem->posY, hintColor);
             x += elem->width;
         }
     }
@@ -860,9 +899,10 @@ static void drawInfoHintText(struct menu_list *menu, struct submenu_list *item, 
     if (elem->aligned)
         x = guiAlignSubMenuHints(2, infoHints, infoIcons, elem->font, elem->width, 1);
 
-    x = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? infoIcons[0] : infoIcons[1], infoHints[0], elem->font, x, elem->posY, elem->color);
+    u64 hintColor = GS_SETREG_RGBA(gDefaultHintTextColor[0], gDefaultHintTextColor[1], gDefaultHintTextColor[2], 0x80);
+    x = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? infoIcons[0] : infoIcons[1], infoHints[0], elem->font, x, elem->posY, hintColor);
     x += elem->width;
-    x = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? infoIcons[1] : infoIcons[0], infoHints[1], elem->font, x, elem->posY, elem->color);
+    x = guiDrawIconAndText(gSelectButton == KEY_CIRCLE ? infoIcons[1] : infoIcons[0], infoHints[1], elem->font, x, elem->posY, hintColor);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -885,6 +925,28 @@ static void validateGUIElems(const char *themePath, config_set_t *themeConfig, t
             initBackground(themePath, themeConfig, theme, backgroundElem, "bg", "BG", 1, NULL);
             backgroundElem->next = theme->infoElems.first;
             theme->infoElems.first = backgroundElem;
+        }
+    }
+
+    // Validate appsMainElems background
+    if (theme->appsMainElems.first) {
+        if (theme->appsMainElems.first->type != ELEM_TYPE_BACKGROUND) {
+            LOG("THEMES No valid background found for appsMain, add default BG_ART\n");
+            theme_element_t *backgroundElem = initBasic(themePath, themeConfig, theme, "bg", ELEM_TYPE_BACKGROUND, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol, theme->fonts[0]);
+            initBackground(themePath, themeConfig, theme, backgroundElem, "bg", "BG", 1, NULL);
+            backgroundElem->next = theme->appsMainElems.first;
+            theme->appsMainElems.first = backgroundElem;
+        }
+    }
+
+    // Validate appsInfoElems background
+    if (theme->appsInfoElems.first) {
+        if (theme->appsInfoElems.first->type != ELEM_TYPE_BACKGROUND) {
+            LOG("THEMES No valid background found for appsInfo, add default BG_ART\n");
+            theme_element_t *backgroundElem = initBasic(themePath, themeConfig, theme, "bg", ELEM_TYPE_BACKGROUND, 0, 0, ALIGN_NONE, screenWidth, screenHeight, SCALING_NONE, gDefaultCol, theme->fonts[0]);
+            initBackground(themePath, themeConfig, theme, backgroundElem, "bg", "BG", 1, NULL);
+            backgroundElem->next = theme->appsInfoElems.first;
+            theme->appsInfoElems.first = backgroundElem;
         }
     }
 
@@ -1035,6 +1097,8 @@ static void thmFree(theme_t *theme)
         // free elements
         freeGUIElems(&theme->mainElems);
         freeGUIElems(&theme->infoElems);
+        freeGUIElems(&theme->appsMainElems);
+        freeGUIElems(&theme->appsInfoElems);
 
         // free textures
         GSTEXTURE *texture;
@@ -1103,6 +1167,12 @@ static void thmSetColors(theme_t *theme)
         elem->color = theme->textColor;
         elem = elem->next;
     }
+
+    elem = theme->appsMainElems.first;
+    while (elem) {
+        elem->color = theme->textColor;
+        elem = elem->next;
+    }
 }
 
 static void thmLoadFonts(config_set_t *themeConfig, const char *themePath, theme_t *theme)
@@ -1148,6 +1218,10 @@ static void thmLoad(const char *themePath)
     newT->mainElems.last = NULL;
     newT->infoElems.first = NULL;
     newT->infoElems.last = NULL;
+    newT->appsMainElems.first = NULL;
+    newT->appsMainElems.last = NULL;
+    newT->appsInfoElems.first = NULL;
+    newT->appsInfoElems.last = NULL;
     newT->gameCacheCount = 0;
     newT->itemsList = NULL;
     newT->loadingIcon = NULL;
@@ -1199,6 +1273,26 @@ static void thmLoad(const char *themePath)
     snprintf(path, sizeof(path), "info0");
     while (addGUIElem(themePath, themeConfig, newT, &newT->infoElems, NULL, path))
         snprintf(path, sizeof(path), "info%d", i++);
+
+    // Parse appsMain elements (allow gaps in numbering by scanning a full range)
+    // Temporarily clear itemsList/loadingIcon so addGUIElem can create fresh ones for apps
+    theme_element_t *savedItemsList = newT->itemsList;
+    theme_element_t *savedLoadingIcon = newT->loadingIcon;
+    newT->itemsList = NULL;
+    newT->loadingIcon = NULL;
+
+    for (i = 0; i <= 19; i++) {
+        snprintf(path, sizeof(path), "appsMain%d", i);
+        addGUIElem(themePath, themeConfig, newT, &newT->appsMainElems, NULL, path);
+    }
+    for (i = 0; i <= 19; i++) {
+        snprintf(path, sizeof(path), "appsInfo%d", i);
+        addGUIElem(themePath, themeConfig, newT, &newT->appsInfoElems, NULL, path);
+    }
+
+    // Restore main itemsList and loadingIcon
+    newT->itemsList = savedItemsList;
+    newT->loadingIcon = savedLoadingIcon;
 
     if (themePath)
         validateGUIElems(themePath, themeConfig, newT);
@@ -1324,6 +1418,48 @@ void thmReinit(const char *path)
 void thmReloadScreenExtents(void)
 {
     rmGetScreenExtents(&screenWidth, &screenHeight);
+}
+
+void thmRecalcItemsListSize(void)
+{
+    if (!gTheme)
+        return;
+
+    // Calculate how much space was freed by hiding bottom elements
+    // Normal state reserves space for both hints and menu icons
+    int normalBottomMargin = HINT_HEIGHT + MENU_ICONS_HEIGHT;
+    int actualBottomMargin = 0;
+    if (gShowHints)
+        actualBottomMargin += HINT_HEIGHT;
+    if (gShowMenuIcons)
+        actualBottomMargin += MENU_ICONS_HEIGHT;
+    int bonusHeight = normalBottomMargin - actualBottomMargin;
+
+    // Recalculate main items list
+    if (gTheme->itemsList && gTheme->itemsList->extended) {
+        items_list_t *itemsList = (items_list_t *)gTheme->itemsList->extended;
+        // Use the available space from posY to screen bottom, minus what's still visible
+        int maxHeight = gTheme->usedHeight - gTheme->itemsList->posY - actualBottomMargin;
+        int baseHeight = gTheme->itemsList->height;
+        int useHeight = (bonusHeight > 0 && maxHeight > baseHeight) ? maxHeight : baseHeight;
+        itemsList->displayedItems = useHeight / MENU_ITEM_HEIGHT;
+        LOG("THEMES Recalc main items list: base=%d bonus=%d use=%d displayed=%d\n", baseHeight, bonusHeight, useHeight, itemsList->displayedItems);
+    }
+
+    // Recalculate appsMainElems items list (if present)
+    theme_element_t *elem = gTheme->appsMainElems.first;
+    while (elem) {
+        if (elem->type == ELEM_TYPE_ITEMS_LIST && elem->extended) {
+            items_list_t *itemsList = (items_list_t *)elem->extended;
+            int maxHeight = gTheme->usedHeight - elem->posY - actualBottomMargin;
+            int baseHeight = elem->height;
+            int useHeight = (bonusHeight > 0 && maxHeight > baseHeight) ? maxHeight : baseHeight;
+            itemsList->displayedItems = useHeight / MENU_ITEM_HEIGHT;
+            LOG("THEMES Recalc apps items list: base=%d bonus=%d use=%d displayed=%d\n", baseHeight, bonusHeight, useHeight, itemsList->displayedItems);
+            break;
+        }
+        elem = elem->next;
+    }
 }
 
 const char *thmGetValue(void)

@@ -111,6 +111,9 @@ typedef struct theme
     theme_elems_t mainElems;
     theme_elems_t infoElems;
 
+    theme_elems_t appsMainElems;
+    theme_elems_t appsInfoElems;
+
     int gameCacheCount;
 
     theme_element_t *itemsList;
@@ -126,6 +129,7 @@ extern theme_t *gTheme;
 void thmInit(void);
 void thmReinit(const char *path);
 void thmReloadScreenExtents(void);
+void thmRecalcItemsListSize(void);
 int thmAddElements(char *path, const char *separator, int forceRefresh);
 const char *thmGetValue(void);
 GSTEXTURE *thmGetTexture(unsigned int id);
