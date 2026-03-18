@@ -1067,10 +1067,16 @@ struct UIItem diaParentalLockConfig[] = {
     {UI_SPACER},
     {UI_BOOL, CFG_PARENLOCK_HIDE_OPTS, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
     {UI_BREAK},
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {"(Requires password to be set)", -1}}},
+    {UI_BREAK},
+
+    {UI_SPLITTER},
 
     {UI_LABEL, 0, 1, 1, -1, -40, 0, {.label = {"Inactivity Power Off", -1}}},
     {UI_SPACER},
     {UI_ENUM, CFG_INACTIVITY_TIMEOUT, 1, 1, -1, 0, 0, {.intvalue = {0, 0}}},
+    {UI_BREAK},
+    {UI_LABEL, 0, 1, 1, -1, 0, 0, {.label = {"(Always active, no password required)", -1}}},
     {UI_BREAK},
 
     // buttons

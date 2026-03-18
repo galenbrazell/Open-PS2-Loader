@@ -1708,6 +1708,10 @@ int guiMsgBox(const char *text, int addAccept, struct UIItem *ui)
         sfxPlay(SFX_CONFIRM);
     }
 
+    // Reset inactivity timer so long-running blocking screens (NBD/HDL server)
+    // don't cause an immediate power-off when dismissed.
+    lastActivityClock = clock();
+
     return terminate - 1;
 }
 
